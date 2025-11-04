@@ -8,10 +8,12 @@ running = True
 def receive(sock):
     while True:
         try:
-            data = sock.recv(1024)
+            data = sock.recv(1024).decode()
+            data.split("\n")
             if not data:
                 break
-            print("\nReceived:", data.decode())
+            for line in data:
+                print("\nReceived:", line)
         except:
             break
 
