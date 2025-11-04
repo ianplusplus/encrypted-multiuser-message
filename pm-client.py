@@ -29,13 +29,17 @@ def recv_message(sock):
     return data.decode('utf-8')
 
 
-def receive(sock):
+def receive(sock, passwd):
     while True:
         try:
             data = recv_message(sock)
             if not data:
                 break
-            print("\nReceived:", data)
+
+            split_data = data.split(" ")
+            plain_text = decrypt(split_data[1], passwd)
+
+            print(f"{split_data[0]}", plain_text)
         except:
             break
 
@@ -88,7 +92,7 @@ else:
 send_message(client_socket, sessionid)
 send_message(client_socket, clientname)
 
-threading.Thread(target=receive, args=(client_socket,), daemon=True).start()
+threading.Thread(target=receive, args=(client_socket, password), daemon=True).start()
 threading.Thread(target=send, args=(client_socket,), daemon=True).start()
 
 while running:
