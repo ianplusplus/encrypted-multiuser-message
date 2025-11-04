@@ -53,7 +53,14 @@ def handle_client(client_socket, client_address):
 
     while client_input != ":end":
     # Receive data from client
-        client_input = recv_message(client_socket)
+        while True:
+            try:
+                data = recv_message(client_socket)
+                if not data:
+                    break
+                print(f"\nReceived: ({client_id})", data)
+            except:
+                break
         if data:
             if client_input != ":end":
                 for client in session_data[session_id]:
