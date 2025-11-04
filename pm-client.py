@@ -85,8 +85,8 @@ if args.name == None:
 else:
     clientname = args.name
 
-client_socket.sendall((sessionid + "\n").encode())
-client_socket.sendall((clientname + "\n").encode())
+send_message(client_socket, sessionid)
+send_message(client_socket, clientname)
 
 threading.Thread(target=receive, args=(client_socket,), daemon=True).start()
 threading.Thread(target=send, args=(client_socket,), daemon=True).start()
