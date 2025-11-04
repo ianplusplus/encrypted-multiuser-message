@@ -26,7 +26,9 @@ if args.id == None:
     id = input("Enter the session id: ")
 else:
     password = args.id
-    
+
+client_socket.sendall(id.encode())
+
 print("Enter in messages. Press enter to send message. Send ':end' to end communication.")
 
 user_input = input()
