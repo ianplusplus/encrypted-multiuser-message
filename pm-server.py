@@ -30,10 +30,16 @@ def handle_client(client_socket, client_address):
         if client_input != ":end":
             for client in session_data[session_id]:
                 client_queue[client].append(client_input)
+            for message in client_queue[client_id]:
+                client_socket.sendall(message.encode())
+            client_queue[client_id] = []
         if data:
             print(f"Received from client: {data.decode()}")
             for client in session_data[session_id]:
                 client_queue[client].append(data.decode())
+            for message in client_queue[client_id]:
+                client_socket.sendall(message.encode())
+            client_queue[client_id] = []
     print(f"Connection with {client_address} has ended.")
     client_socket.close()
 
