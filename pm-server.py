@@ -2,7 +2,7 @@ import socket
 import threading
 
 session_data = {}
-client_queue = {}
+socket_map = {}
 
 def recv_message(sock):
     # Receive the 4-byte size prefix
@@ -30,7 +30,7 @@ def send_message(sock, text):
 
 def handle_client(client_socket, client_address):
     global session_data
-    global client_queue
+    global socket_map
     
     session_id = recv_message(client_socket)
     client_id = recv_message(client_socket)
@@ -41,8 +41,8 @@ def handle_client(client_socket, client_address):
         session_data[session_id] = []
     session_data[session_id].append(client_id)
 
-    if client_id not in client_queue:
-        client_queue[client_id] = []
+    if client_id not in socket_map:
+        socket_map[client_id] = client_socket
 
     client_input = ""
 
@@ -55,17 +55,12 @@ def handle_client(client_socket, client_address):
             if not message:
                 break
 
-            print(f"({client_id}) says: {message}")
+            print(f"{client_id} says: {message}")
 
             # Broadcast to other clients in same session/group
             for other_client in session_data[session_id]:
                 if other_client != client_id:
-                    client_queue[other_client].append(f"{client_id}: {message}")
-
-            # Send any pending messages for THIS client
-            while client_queue[client_id]:
-                pending = client_queue[client_id].pop(0)
-                send_message(client_socket, pending)
+                    send_message(socket_map[other_client], "{client_id}: {message}")
 
         except Exception as e:
             print("Error:", e)
