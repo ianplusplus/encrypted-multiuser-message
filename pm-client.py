@@ -5,22 +5,27 @@ import threading
 
 running = True
 
+def send_message(sock, text):
+    data = text.encode('utf-8')
+    length = len(data).to_bytes(4, 'big')  # 4-byte length prefix
+    sock.sendall(length + data)
+
 def receive(sock):
     while True:
         try:
             data = sock.recv(1024).decode()
-            data.split("\n")
             if not data:
                 break
-            for line in data:
-                print("\nReceived:", line)
+            print("\nReceived:", data)
         except:
             break
 
 def send(sock):
     global running
+
+    print("Enter in message. Press enter to send message. Send ':end' to end communication.")
+
     while True:
-        print("Enter in messages. Press enter to send message. Send ':end' to end communication.")
 
         user_input = input()
         if user_input != ":end":
@@ -28,14 +33,7 @@ def send(sock):
         else:
             running = False
 
-        while user_input != ":end":
-            client_socket.sendall(user_input.encode())
-            user_input = input()
-            if user_input != ":end":
-                user_input = encrypt(user_input, password)
-            else:
-                running = False
-        client_socket.sendall(user_input.encode())
+        send_message(sock, user_input)
 
 parser = argparse.ArgumentParser(description="Port-Message Client")
 
