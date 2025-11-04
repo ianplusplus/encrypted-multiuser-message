@@ -10,10 +10,29 @@ def send_message(sock, text):
     length = len(data).to_bytes(4, 'big')  # 4-byte length prefix
     sock.sendall(length + data)
 
+def recv_message(sock):
+    # Receive the 4-byte size prefix
+    length_bytes = sock.recv(4)
+    if not length_bytes:
+        return None
+
+    length = int.from_bytes(length_bytes, 'big')
+
+    # Read exact number of bytes
+    data = b''
+    while len(data) < length:
+        packet = sock.recv(length - len(data))
+        if not packet:
+            return None
+        data += packet
+
+    return data.decode('utf-8')
+
+
 def receive(sock):
     while True:
         try:
-            data = sock.recv(1024).decode()
+            data = recv_message(sock)
             if not data:
                 break
             print("\nReceived:", data)

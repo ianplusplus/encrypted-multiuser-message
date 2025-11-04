@@ -4,6 +4,30 @@ import threading
 session_data = {}
 client_queue = {}
 
+def recv_message(sock):
+    # Receive the 4-byte size prefix
+    length_bytes = sock.recv(4)
+    if not length_bytes:
+        return None
+
+    length = int.from_bytes(length_bytes, 'big')
+
+    # Read exact number of bytes
+    data = b''
+    while len(data) < length:
+        packet = sock.recv(length - len(data))
+        if not packet:
+            return None
+        data += packet
+
+    return data.decode('utf-8')
+
+def send_message(sock, text):
+    data = text.encode('utf-8')
+    length = len(data).to_bytes(4, 'big')  # 4-byte length prefix
+    sock.sendall(length + data)
+
+
 def handle_client(client_socket, client_address):
     global session_data
     global client_queue
@@ -29,21 +53,16 @@ def handle_client(client_socket, client_address):
 
     while client_input != ":end":
     # Receive data from client
-        data = client_socket.recv(1024)
-        client_input = data.decode()
-        if client_input != ":end":
-            for client in session_data[session_id]:
-                client_queue[client].append(client_input)
-            for message in client_queue[client_id]:
-                client_socket.sendall(message.encode())
-            client_queue[client_id] = []
+        client_input = recv_message(client_socket)
         if data:
-            print(f"Received from client: {data.decode()}")
-            for client in session_data[session_id]:
-                client_queue[client].append(data.decode())
-            for message in client_queue[client_id]:
-                client_socket.sendall(message.encode())
-            client_queue[client_id] = []
+            if client_input != ":end":
+                for client in session_data[session_id]:
+                    client_queue[client].append(client_input)
+                for message in client_queue[client_id]:
+                    send_message(client_socket, message)
+                client_queue[client_id] = []
+                print(f"Received from client: {client_input}")
+                client_queue[client_id] = []
     print(f"Connection with {client_address} has ended.")
     client_socket.close()
 
