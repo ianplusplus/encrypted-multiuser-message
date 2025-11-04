@@ -39,8 +39,9 @@ parser = argparse.ArgumentParser(description="Port-Message Client")
 
 parser.add_argument("--address", "-a", help="Address of the server.")
 parser.add_argument("--port", "-p", type=int, default=6767, help="Listening port for server.")
-parser.add_argument("--secret", "-s", help="Sets the password")
-parser.add_argument("--id", "-i", help="Session ID for the communication")
+parser.add_argument("--secret", "-s", help="Sets the password.")
+parser.add_argument("--id", "-i", help="Session ID for the communication.")
+parser.add_argument("--name", "-n", help="Client unique identifier.")
 args = parser.parse_args()
 
 HOST = args.address  # Server IP
@@ -60,7 +61,13 @@ if args.id == None:
 else:
     sessionid = args.id
 
+if args.name == None:
+    clientname = input("Enter the unique name: ")
+else:
+    clientname = args.name
+
 client_socket.sendall(sessionid.encode())
+client_socket.sendall(clientname.encode())
 
 threading.Thread(target=receive, args=(client_socket,), daemon=True).start()
 threading.Thread(target=send, args=(client_socket,), daemon=True).start()

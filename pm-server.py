@@ -1,16 +1,25 @@
 import socket
 import threading
 
-def handle_client(client_socket, client_address):
-    session_data = {}
+session_data = {}
+client_queue = {}
 
+def handle_client(client_socket, client_address):
+    global session_data
+    global client_queue
     print(f"Connection from {client_address}")
     data = client_socket.recv(1024)
     print(f"Session ID: {data.decode()}")
     session_id = data.decode()
-
+    data = client_socket.recv(1024)
+    print(f"Client ID: {data.decode()}")
+    client_id = data.decode()
     if session_id not in session_data:
         session_data[session_id] = []
+    session_data[session_id].append(client_id)
+
+    if client_id not in client_queue:
+        client_queue[client_id] = []
 
     client_input = ""
 
@@ -19,10 +28,12 @@ def handle_client(client_socket, client_address):
         data = client_socket.recv(1024)
         client_input = data.decode()
         if client_input != ":end":
-            session_data[session_id].append(client_input)
+            for client in session_data[session_id]:
+                client_queue[client].append(client_input)
         if data:
             print(f"Received from client: {data.decode()}")
-            #client_socket.sendall(b"Hello, client!")  # Send response
+            for client in session_data[session_id]:
+                client_queue[client].append(data.decode())
     print(f"Connection with {client_address} has ended.")
     client_socket.close()
 
