@@ -9,9 +9,14 @@ def handle_client(client_socket, client_address):
     global client_queue
     print(f"Connection from {client_address}")
     data = client_socket.recv(1024)
+
+    lines = data.split("\n")
+
+    session_id = lines[0]
+    client_id = lines[1]
+
     print(f"Session ID: {data.decode()}")
     session_id = data.decode()
-    data = client_socket.recv(1024)
     print(f"Client ID: {data.decode()}")
     client_id = data.decode()
     if session_id not in session_data:
