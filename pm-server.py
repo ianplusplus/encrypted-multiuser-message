@@ -2,16 +2,24 @@ import socket
 import threading
 
 def handle_client(client_socket, client_address):
+    session_data = {}
+
     print(f"Connection from {client_address}")
+    data = client_socket.recv(1024)
+    print(f"Session ID: {data.decode()}")
+    session_id = data.decode()
+
+    if session_id not in session_data:
+        session_data[session_id] = []
+
     client_input = ""
-    messages = []
 
     while client_input != ":end":
     # Receive data from client
         data = client_socket.recv(1024)
         client_input = data.decode()
         if client_input != ":end":
-            messages.append(client_input)
+            session_data[session_id].append(client_input)
         if data:
             print(f"Received from client: {data.decode()}")
             #client_socket.sendall(b"Hello, client!")  # Send response
