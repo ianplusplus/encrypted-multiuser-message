@@ -10,6 +10,8 @@ client_socket.connect((HOST, PORT))  # Connect to server
 
 password = input("Enter password: ")
 
+print("Enter in messages. Press enter to send message. Send ':end' to end communication.")
+
 user_input = input()
 if user_input != ":end":
     user_input = encrypt(user_input, password)
