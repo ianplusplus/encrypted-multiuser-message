@@ -60,7 +60,7 @@ def handle_client(client_socket, client_address):
             # Broadcast to other clients in same session/group
             for other_client in session_data[session_id]:
                 if other_client != client_id:
-                    send_message(socket_map[other_client], "{client_id}: {message}")
+                    send_message(socket_map[other_client], f"{client_id}: {message}")
 
         except Exception as e:
             print("Error:", e)
