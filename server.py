@@ -1,8 +1,24 @@
 import socket
+import argparse
 from security import encrypt, decrypt
 
-HOST = '192.168.2.15'  # Localhost
-PORT = 6767        # Port to listen on
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Doesn't even need to connect successfully
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+    finally:
+        s.close()
+    return ip
+
+parser = argparse.ArgumentParser(description="Port-Message Server")
+
+parser.add_argument("--port", "-P", type=int, default=6767, help="Listening port for server.")
+args = parser.parse_args()
+
+HOST = get_local_ip()  # Localhost
+PORT = args.port        # Port to listen on
 
 # Create TCP socket
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
