@@ -1,6 +1,39 @@
 import socket
 import argparse
 from security import encrypt, decrypt
+import threading
+
+running = True
+
+def receive(sock):
+    while True:
+        try:
+            data = sock.recv(1024)
+            if not data:
+                break
+            print("\nReceived:", data.decode())
+        except:
+            break
+
+def send(sock):
+    global running
+    while True:
+        print("Enter in messages. Press enter to send message. Send ':end' to end communication.")
+
+        user_input = input()
+        if user_input != ":end":
+            user_input = encrypt(user_input, password)
+        else:
+            running = False
+
+        while user_input != ":end":
+            client_socket.sendall(user_input.encode())
+            user_input = input()
+            if user_input != ":end":
+                user_input = encrypt(user_input, password)
+            else:
+                running = False
+        client_socket.sendall(user_input.encode())
 
 parser = argparse.ArgumentParser(description="Port-Message Client")
 
@@ -29,17 +62,19 @@ else:
 
 client_socket.sendall(sessionid.encode())
 
-print("Enter in messages. Press enter to send message. Send ':end' to end communication.")
+threading.Thread(target=receive, args=(client_socket,), daemon=True).start()
+threading.Thread(target=send, args=(client_socket,), daemon=True).start()
 
-user_input = input()
-if user_input != ":end":
-    user_input = encrypt(user_input, password)
-
-while user_input != ":end":
-    client_socket.sendall(user_input.encode())
-    user_input = input()
-    if user_input != ":end":
-        user_input = encrypt(user_input, password)
-client_socket.sendall(user_input.encode())
+while running:
+    pass
 
 client_socket.close()
+
+
+# Keep main thread alive
+
+
+
+
+#need to add logic to the server to send back messages to the clients, currently the messages
+# are just being logged on the server under their session id
