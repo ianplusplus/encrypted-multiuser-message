@@ -51,21 +51,22 @@ def handle_client(client_socket, client_address):
 
     client_input = ""
 
-    while client_input != ":end":
+    end = False
+
+    while client_input != end:
         try:
             data = recv_message(client_socket)
             if not data:
                 break
             print(f"\nReceived: ({client_id})", data)
-            if data:
-                 if client_input != ":end":
-                    for client in session_data[session_id]:
-                        client_queue[client].append(client_input)
-                    for message in client_queue[client_id]:
-                        send_message(client_socket, message)
-                    client_queue[client_id] = []
-                    print(f"Received from client: {client_input}")
-                    client_queue[client_id] = []
+            if client_input != ":end":
+                for client in session_data[session_id]:
+                    client_queue[client].append(client_input)
+                for message in client_queue[client_id]:
+                    send_message(client_socket, message)
+                client_queue[client_id] = []
+            else:
+                end = True
         except:
             break
     print(f"Connection with {client_address} has ended.")
