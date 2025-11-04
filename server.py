@@ -29,6 +29,10 @@ client_socket.close()
 
 password = input("Enter password: ")
 
+print('---------------------------------------------------------------------------------------')
+print('SECRET --- SECRET --- SECRET --- SECRET --- SECRET --- SECRET --- SECRET --- SECRET ---')
+print('---------------------------------------------------------------------------------------')
+
 for message in messages:
     decoded_message = decrypt(message, password)
     print(decoded_message)
