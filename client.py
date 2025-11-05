@@ -26,7 +26,7 @@ def receive(sock, passwd):
                 continue
 
             plain_text = decrypt(split_data[1], passwd)
-            print(f"{split_data[0]}: {plain_text}")
+            print(f"{split_data[0]} {plain_text}")
 
         except Exception:
             connected = False
