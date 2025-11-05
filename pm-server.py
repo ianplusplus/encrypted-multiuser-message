@@ -6,59 +6,62 @@ from messages import recv_message, send_message
 session_data = {}
 socket_map = {}
 
+session_lock = threading.Lock()
+socket_lock = threading.Lock()
+
 def handle_client(client_socket, client_address):
-    global session_data
-    global socket_map
+    global session_data, socket_map
     
     session_id = recv_message(client_socket)
     client_id = recv_message(client_socket)
 
     print(f"Connection {client_address}, Session ID: {session_id}, Client ID: {client_id}")
 
-    if session_id not in session_data:
-        session_data[session_id] = []
-    session_data[session_id].append(client_id)
+    with session_lock:
+        session_data.setdefault(session_id, []).append(client_id)
 
-    if client_id not in socket_map:
+    with socket_lock:
         socket_map[client_id] = client_socket
 
-    client_input = ""
-
-    end = False
-
-    while not end:
-        try:
-            # Receive a new message from this client
+    try:
+        while True:
             message = recv_message(client_socket)
             if not message:
                 break
 
             print(f"{client_id} says: {message}")
 
-            # Broadcast to other clients in same session/group
-            for other_client in session_data[session_id]:
+            # Broadcast message
+            with session_lock:
+                recipients = list(session_data.get(session_id, []))
+
+            for other_client in recipients:
                 if other_client != client_id:
-                    send_message(socket_map[other_client], f"{client_id}: {message}")
+                    try:
+                        with socket_lock:
+                            send_message(socket_map[other_client], f"{client_id}: {message}")
+                    except:
+                        # Remove disconnected clients during messaging
+                        with socket_lock:
+                            socket_map.pop(other_client, None)
+                        with session_lock:
+                            if other_client in session_data.get(session_id, []):
+                                session_data[session_id].remove(other_client)
 
-        except Exception as e:
-            print("Error:", e)
-            break
+    finally:
+        print(f"Connection with {client_address} has ended.")
 
-    print(f"Connection with {client_address} has ended.")
+        # Cleanup on exit
+        with socket_lock:
+            socket_map.pop(client_id, None)
 
-    # Remove client from socket map
-    if client_id in socket_map:
-        del socket_map[client_id]
+        with session_lock:
+            if client_id in session_data.get(session_id, []):
+                session_data[session_id].remove(client_id)
+            if not session_data.get(session_id): # if empty or missing
+                session_data.pop(session_id, None)
 
-    # Remove client from the session list
-    if client_id in session_data[session_id]:
-        session_data[session_id].remove(client_id)
-
-    # Optional: Remove the session if empty
-    if len(session_data[session_id]) == 0:
-        del session_data[session_id]
-
-    client_socket.close()
+        client_socket.close()
 
 parser = argparse.ArgumentParser(description="Port-Message Server")
 
