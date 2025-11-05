@@ -112,6 +112,7 @@ port = args.port
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind(("0.0.0.0", port))
 server_socket.listen(5)
+server_socket.settimeout(1.0)
 print(f"Server listening on port {port}...")
 
 running = True
@@ -141,6 +142,9 @@ while running:
         client_socket, client_address = server_socket.accept()
         client_thread = threading.Thread(target=handle_client, args=(client_socket, client_address))
         client_thread.start()
+    except socket.timeout:
+        # Accept timed out, check running again
+        continue
     except OSError:
         # Socket closed during shutdown
         break
