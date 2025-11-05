@@ -45,6 +45,12 @@ def handle_client(client_socket, client_address):
             break
 
     print(f"Connection with {client_address} has ended.")
+
+    if client_socket in socket_map:
+        del socket_map[client_socket]
+    if client_id in session_data:
+        del session_data[client_id]
+        
     client_socket.close()
 
 parser = argparse.ArgumentParser(description="Port-Message Server")
@@ -59,8 +65,22 @@ server_socket.bind(("0.0.0.0", port))
 server_socket.listen(5)
 print(f"Server listening on port {port}...")
 
+running = True
+
+def command_listener():
+    global running
+    while running:
+        cmd = input()
+        if cmd.lower() == ":end":
+            running = False
+            print("Stopping server...")
+            server_socket.close()
+
+# Start the command listener thread
+threading.Thread(target=command_listener, daemon=True).start()
+
 while True:
     client_socket, client_address = server_socket.accept()
     # Create a new thread for each client
     client_thread = threading.Thread(target=handle_client, args=(client_socket, client_address))
-    client_thread.start()
+    client_thread.start() 
