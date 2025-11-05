@@ -47,7 +47,7 @@ def handle_client(client_socket, client_address):
     print(f"Connection with {client_address} has ended.")
 
     if client_socket in socket_map:
-        del socket_map[client_socket]
+        del socket_map[client_id]
     if client_id in session_data[session_id]:
         session_data[session_id].remove(client_id)
 
