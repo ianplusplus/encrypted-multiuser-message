@@ -48,9 +48,10 @@ def handle_client(client_socket, client_address):
 
     if client_socket in socket_map:
         del socket_map[client_socket]
-    if client_id in session_data:
-        del session_data[client_id]
-        
+    if client_id in session_data[session_id]:
+        session_data[session_id].remove(client_id)
+
+
     client_socket.close()
 
 parser = argparse.ArgumentParser(description="Port-Message Server")
@@ -79,7 +80,7 @@ def command_listener():
 # Start the command listener thread
 threading.Thread(target=command_listener, daemon=True).start()
 
-while True:
+while running:
     client_socket, client_address = server_socket.accept()
     # Create a new thread for each client
     client_thread = threading.Thread(target=handle_client, args=(client_socket, client_address))
