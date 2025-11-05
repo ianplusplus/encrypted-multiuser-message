@@ -46,10 +46,17 @@ def handle_client(client_socket, client_address):
     print(f"Connection with {client_address} has ended.")
     client_socket.close()
 
+parser = argparse.ArgumentParser(description="Port-Message Server")
+
+parser.add_argument("--port", "-p", type=int, default=6767, help="Listening port for server.")
+args = parser.parse_args()
+
+port = args.port
+
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.bind(("0.0.0.0", 6767))
+server_socket.bind(("0.0.0.0", port))
 server_socket.listen(5)
-print("Server listening on port 6767...")
+print(f"Server listening on port {port}...")
 
 while True:
     client_socket, client_address = server_socket.accept()
