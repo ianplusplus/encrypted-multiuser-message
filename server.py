@@ -1,0 +1,148 @@
+import socket
+import threading
+import argparse
+from messages import recv_message, send_message
+
+# -------------------------------
+# Global session and socket maps
+# -------------------------------
+session_data = {}  # {session_id: [client_id, ...]}
+socket_map = {}    # {client_id: socket}
+
+session_lock = threading.Lock()
+socket_lock = threading.Lock()
+
+# -------------------------------
+# Client handler
+# -------------------------------
+def handle_client(client_socket, client_address):
+    try:
+        # Receive session and client ID
+        session_id = recv_message(client_socket)
+        client_id = recv_message(client_socket)
+
+        print(f"Connection {client_address}, Session ID: {session_id}, Client ID: {client_id}")
+
+        # -------------------------------
+        # Remove stale socket if reconnecting
+        # -------------------------------
+        with socket_lock:
+            old_socket = socket_map.get(client_id)
+            if old_socket:
+                try:
+                    old_socket.close()
+                except:
+                    pass
+                del socket_map[client_id]
+
+        # -------------------------------
+        # Add client to session
+        # -------------------------------
+        with session_lock:
+            if session_id not in session_data:
+                session_data[session_id] = []
+            if client_id not in session_data[session_id]:
+                session_data[session_id].append(client_id)
+
+        # Register new socket
+        with socket_lock:
+            socket_map[client_id] = client_socket
+
+        # -------------------------------
+        # Message loop
+        # -------------------------------
+        while True:
+            message = recv_message(client_socket)
+            if not message:
+                break
+
+            print(f"{client_id} says: {message}")
+
+            # Broadcast to all other clients in the same session
+            with session_lock:
+                recipients = session_data.get(session_id, []).copy()
+
+            for other_client in recipients:
+                if other_client == client_id:
+                    continue
+                with socket_lock:
+                    sock = socket_map.get(other_client)
+                if sock:
+                    try:
+                        send_message(sock, f"{client_id}: {message}")
+                    except:
+                        # Remove disconnected clients during broadcast
+                        with socket_lock:
+                            socket_map.pop(other_client, None)
+                        with session_lock:
+                            if other_client in session_data.get(session_id, []):
+                                session_data[session_id].remove(other_client)
+
+    except Exception as e:
+        print(f"Error with client {client_id} ({client_address}): {e}")
+
+    finally:
+        # -------------------------------
+        # Cleanup on disconnect
+        # -------------------------------
+        print(f"Connection with {client_address} ended.")
+
+        with socket_lock:
+            socket_map.pop(client_id, None)
+
+        with session_lock:
+            if client_id in session_data.get(session_id, []):
+                session_data[session_id].remove(client_id)
+            if not session_data.get(session_id):
+                session_data.pop(session_id, None)
+
+        try:
+            client_socket.close()
+        except:
+            pass
+
+# -------------------------------
+# Server setup
+# -------------------------------
+parser = argparse.ArgumentParser(description="Port-Message Server")
+parser.add_argument("--port", "-p", type=int, default=6767, help="Listening port for server.")
+args = parser.parse_args()
+port = args.port
+
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind(("0.0.0.0", port))
+server_socket.listen(5)
+print(f"Server listening on port {port}...")
+
+running = True
+
+# -------------------------------
+# Command listener for shutdown
+# -------------------------------
+def command_listener():
+    global running
+    while running:
+        cmd = input()
+        if cmd.lower() == ":end":
+            running = False
+            print("Stopping server...")
+            try:
+                server_socket.close()
+            except:
+                pass
+
+threading.Thread(target=command_listener, daemon=True).start()
+
+# -------------------------------
+# Main accept loop
+# -------------------------------
+while running:
+    try:
+        client_socket, client_address = server_socket.accept()
+        client_thread = threading.Thread(target=handle_client, args=(client_socket, client_address))
+        client_thread.start()
+    except OSError:
+        # Socket closed during shutdown
+        break
+    except Exception as e:
+        print(f"Error accepting connections: {e}")
