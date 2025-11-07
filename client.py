@@ -49,7 +49,7 @@ def send(sock, passwd):
                 break
             if connected:
                 encrypted_msg = encrypt(user_input, passwd)
-                sig = sign_message(private_key, encrypted_msg)
+                #sig = sign_message(private_key, encrypted_msg)
                 send_message(sock, encrypted_msg)
                 send_message_raw(sock, sig)
             else:
