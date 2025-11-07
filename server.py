@@ -8,9 +8,26 @@ from messages import recv_message, send_message
 # -------------------------------
 session_data = {}  # {session_id: [client_id, ...]}
 socket_map = {}    # {client_id: socket}
+public_key_map = {}
 
 session_lock = threading.Lock()
 socket_lock = threading.Lock()
+public_key_lock = threading.Lock()
+
+# -------------------------------
+# Helper functions for public key storage
+# -------------------------------
+
+def set_public_key(client_id: str, session_id: str, public_key: bytes):
+    if client_id not in public_key_map:
+        public_key_map[client_id] = {}
+    public_key_map[client_id][session_id] = public_key
+    print(f"Public key for {client_id} added for session: {session_id}")
+
+
+def get_public_key(client_id: str, session_id: str) -> bytes | None:
+    return public_key_map.get(client_id, {}).get(session_id)
+
 
 # -------------------------------
 # Client handler
@@ -20,6 +37,7 @@ def handle_client(client_socket, client_address):
         # Receive session and client ID
         session_id = recv_message(client_socket)
         client_id = recv_message(client_socket)
+        client_id_public_key = recv_message(client_socket)
 
         print(f"Connection {client_address}, Session ID: {session_id}, Client ID: {client_id}")
 
@@ -47,6 +65,9 @@ def handle_client(client_socket, client_address):
         # Register new socket
         with socket_lock:
             socket_map[client_id] = client_socket
+
+        with public_key_lock:
+            set_public_key(client_id, session_id, client_id_public_key)
 
         # -------------------------------
         # Message loop

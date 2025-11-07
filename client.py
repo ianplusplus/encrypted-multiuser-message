@@ -73,8 +73,11 @@ password = args.secret or input("Enter password: ")
 sessionid = args.id or input("Enter the session id: ")
 clientname = args.name or input("Enter your unique name: ")
 
-if args.key or not file_exists("{clientname}.{sessionid}_private_ed25519.pem"):
+if args.key or not file_exists(f"{clientname}.{sessionid}_private_ed25519.pem"):
     generate_encrypted_ed25519_keypair(f"{clientname}.{sessionid}_private_ed25519.pem", f"{clientname}.{sessionid}_public_ed25519.pem")
+
+private_key = load_private_key(f"{clientname}.{sessionid}_private_ed25519.pem")
+public_key = load_public_key(f"{clientname}.{sessionid}_public_ed25519.pem")
 
 # -------------------------------
 # Reconnect loop
@@ -89,6 +92,7 @@ while running:
         # Send session info
         send_message(client_socket, sessionid)
         send_message(client_socket, clientname)
+        send_message(client_socket, public_key)
 
         # Start threads for sending and receiving
         recv_thread = threading.Thread(target=receive, args=(client_socket, password), daemon=True)
