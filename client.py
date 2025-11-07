@@ -4,6 +4,7 @@ import argparse
 import time
 from security import encrypt, decrypt
 from messages import recv_message, send_message
+from create-key import generate_encrypted_ed25519_keypair
 
 running = True  # Main flag to control program
 connected = False  # Flag to check if socket is connected
@@ -63,6 +64,7 @@ parser.add_argument("--port", "-p", type=int, default=6767, help="Server port")
 parser.add_argument("--secret", "-s", help="Password")
 parser.add_argument("--id", "-i", help="Session ID")
 parser.add_argument("--name", "-n", help="Client unique ID")
+parser.add_argument("--key", "-k", help="Creates a key pair for the client/session combination.", action="store_true")
 args = parser.parse_args()
 
 HOST = args.address
@@ -70,6 +72,9 @@ PORT = args.port
 password = args.secret or input("Enter password: ")
 sessionid = args.id or input("Enter the session id: ")
 clientname = args.name or input("Enter your unique name: ")
+
+if args.key:
+    generate_encrypted_ed25519_keypair(f"{clientname}.{sessionid}_private_ed25519.pem", f"{clientname}.{sessionid}_public_ed25519.pem")
 
 # -------------------------------
 # Reconnect loop
