@@ -51,7 +51,7 @@ def send(sock, passwd):
                 encrypted_msg = encrypt(user_input, passwd)
                 sig = sign_message(private_key, encrypted_msg)
                 send_message(sock, encrypted_msg)
-                send_message(sock, sig)
+                send_message_raw(sock, sig)
             else:
                 print("Not connected to server. Waiting to reconnect...")
         except Exception:
