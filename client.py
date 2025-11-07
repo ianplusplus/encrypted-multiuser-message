@@ -4,7 +4,7 @@ import argparse
 import time
 from security import encrypt, decrypt
 from messages import recv_message, send_message
-from create-key import generate_encrypted_ed25519_keypair
+from createkey import generate_encrypted_ed25519_keypair
 
 running = True  # Main flag to control program
 connected = False  # Flag to check if socket is connected
