@@ -4,10 +4,11 @@ import argparse
 import time
 from security import encrypt, decrypt
 from messages import recv_message, send_message, send_message_raw
-from akey import generate_encrypted_ed25519_keypair, load_private_key, load_public_key, file_exists
+from akey import generate_encrypted_ed25519_keypair, load_private_key, load_public_key, file_exists, sign_message
 
 running = True  # Main flag to control program
 connected = False  # Flag to check if socket is connected
+private_key = None
 
 # -------------------------------
 # Thread to receive messages
@@ -37,7 +38,7 @@ def receive(sock, passwd):
 # Thread to send messages
 # -------------------------------
 def send(sock, passwd):
-    global running, connected
+    global running, connected, private_key
     print("Enter messages. Type ':end' to quit.")
 
     while running:
@@ -48,7 +49,9 @@ def send(sock, passwd):
                 break
             if connected:
                 encrypted_msg = encrypt(user_input, passwd)
+                sig = sign_message(private_key, encrypted_msg)
                 send_message(sock, encrypted_msg)
+                send_message(sock, sig)
             else:
                 print("Not connected to server. Waiting to reconnect...")
         except Exception:

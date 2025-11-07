@@ -2,6 +2,7 @@ import socket
 import threading
 import argparse
 from messages import recv_message, send_message, recv_message_raw
+from akey import verify_message
 
 # -------------------------------
 # Global session and socket maps
@@ -9,10 +10,52 @@ from messages import recv_message, send_message, recv_message_raw
 session_data = {}  # {session_id: [client_id, ...]}
 socket_map = {}    # {client_id: socket}
 public_key_map = {}
+client_verified = {}
 
 session_lock = threading.Lock()
 socket_lock = threading.Lock()
 public_key_lock = threading.Lock()
+client_verified_lock = threading.Lock()
+
+# -------------------------------
+# Helper functions for vouch system
+# -------------------------------
+
+def register_client(session_id, client_id, public_key):
+    with client_verified_lock:
+        if session_id not in client_verified:
+            client_verified[session_id] = {}
+        client_verified[session_id][client_id] = {
+            "public_key": public_key,
+            "vouched_by": set()
+        }
+
+def vouch_client(session_id, target_client_id, vouched_by_client_id):
+    with client_verified_lock:
+        try:
+            client_verified[session_id][target_client_id]["vouched_by"].add(vouched_by_client_id)
+        except KeyError:
+            print("Session or target client not found")
+
+def is_vouched(session_id, client_id):
+    with client_verified_lock:
+        try:
+            return len(client_verified[session_id][client_id]["vouched_by"]) > 0
+        except KeyError:
+            return False
+        
+def get_verified_public_key(session_id, client_id) -> bytes | None:
+    """
+    Retrieve the public key of a client in a session.
+    Returns None if the session or client is not registered.
+    Thread-safe.
+    """
+    with client_verified_lock:
+        try:
+            return client_verified[session_id][client_id]["public_key"]
+        except KeyError:
+            return None
+
 
 # -------------------------------
 # Helper functions for public key storage
@@ -69,15 +112,24 @@ def handle_client(client_socket, client_address):
         with public_key_lock:
             set_public_key(client_id, session_id, client_id_public_key)
 
+        register_client(session_id, client_id, client_id_public_key)
+
+        key_matches_id = client_id_public_key == get_verified_public_key(session_id, client_id)
+
         # -------------------------------
         # Message loop
         # -------------------------------
         while True:
             message = recv_message(client_socket)
+            sig = recv_message(client_socket)
+
+            if not verify_message(get_public_key(client_id, session_id), message, sig):
+                message = None
+
             if not message:
                 break
 
-            print(f"{client_id} says: {message}")
+            print(f"{client_id} says: {message} Vouched: {is_vouched(session_id, client_id)}")   
 
             # Broadcast to all other clients in the same session
             with session_lock:

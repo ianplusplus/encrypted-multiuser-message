@@ -2,6 +2,7 @@ import subprocess
 import os
 import getpass
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ed25519
 
 def generate_encrypted_ed25519_keypair(
     private_key_path="client_private_ed25519.pem",
@@ -53,4 +54,23 @@ def file_exists(path):
     if os.path.exists(path):
         return True
     else:
+        return False
+    
+def sign_message(private_key, message_bytes: bytes) -> bytes:
+    """
+    Signs a message using the provided Ed25519 private key.
+    Returns the signature bytes.
+    """
+    signature = private_key.sign(message_bytes)
+    return signature
+
+def verify_message(public_key_pem: bytes, message: bytes, signature: bytes) -> bool:
+    """
+    Returns True if the signature is valid, False otherwise.
+    """
+    public_key = serialization.load_pem_public_key(public_key_pem)
+    try:
+        public_key.verify(signature, message)
+        return True
+    except Exception:
         return False
