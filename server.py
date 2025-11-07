@@ -1,7 +1,7 @@
 import socket
 import threading
 import argparse
-from messages import recv_message, send_message
+from messages import recv_message, send_message, recv_message_raw
 
 # -------------------------------
 # Global session and socket maps
@@ -37,7 +37,7 @@ def handle_client(client_socket, client_address):
         # Receive session and client ID
         session_id = recv_message(client_socket)
         client_id = recv_message(client_socket)
-        client_id_public_key = recv_message(client_socket)
+        client_id_public_key = recv_message_raw(client_socket)
 
         print(f"Connection {client_address}, Session ID: {session_id}, Client ID: {client_id}")
 

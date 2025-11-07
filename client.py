@@ -3,7 +3,7 @@ import threading
 import argparse
 import time
 from security import encrypt, decrypt
-from messages import recv_message, send_message
+from messages import recv_message, send_message, send_message_raw
 from akey import generate_encrypted_ed25519_keypair, load_private_key, load_public_key, file_exists
 
 running = True  # Main flag to control program
@@ -92,7 +92,7 @@ while running:
         # Send session info
         send_message(client_socket, sessionid)
         send_message(client_socket, clientname)
-        send_message(client_socket, public_key)
+        send_message_raw(client_socket, public_key)
 
         # Start threads for sending and receiving
         recv_thread = threading.Thread(target=receive, args=(client_socket, password), daemon=True)
