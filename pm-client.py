@@ -2,7 +2,9 @@ import socket
 import argparse
 from security import encrypt, decrypt
 from messages import recv_message, send_message
+from create-key import generate_encrypted_ed25519_keypair
 import threading
+
 
 running = True
 
@@ -42,6 +44,7 @@ parser.add_argument("--port", "-p", type=int, default=6767, help="Listening port
 parser.add_argument("--secret", "-s", help="Sets the password.")
 parser.add_argument("--id", "-i", help="Session ID for the communication.")
 parser.add_argument("--name", "-n", help="Client unique identifier.")
+parser.add_argument("--key", "-k", help="Creates a key pair for the client/session combination.", action="store_true")
 args = parser.parse_args()
 
 HOST = args.address  # Server IP
@@ -65,6 +68,9 @@ if args.name == None:
     clientname = input("Enter the unique name: ")
 else:
     clientname = args.name
+
+if args.key:
+    generate_encrypted_ed25519_keypair(f"{clientname}.{sessionid}_private_ed25519.pem", f"{clientname}.{sessionid}_public_ed25519.pem")
 
 send_message(client_socket, sessionid)
 send_message(client_socket, clientname)
